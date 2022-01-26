@@ -1,11 +1,14 @@
 #pragma once
 
+#include <SDL2/SDL.h>
+
 #include <cstdint>
 #include <cstring>
 #include <memory>
 #include <vector>
 
 #include "bus.hpp"
+#include "kinnow_palette.hpp"
 
 enum KinnowFbRegisters : uint8_t {
   KINNOW_REG_SIZE = 0,
@@ -21,6 +24,8 @@ public:
     auto self = std::shared_ptr<KinnowFb>(this, [](auto) {});
 
     m_framebuffer.resize(width * height * 2, 0);
+    m_pixels.resize(width * height * 4, 0);
+
     m_slot_info[0] = 0x0c007Ca1;
     m_slot_info[1] = 0x4b494e35;
 
@@ -29,13 +34,20 @@ public:
     m_regs[KINNOW_REG_SIZE] = height << 12 | width;
     m_regs[KINNOW_REG_VRAM] = m_framebuffer.size();
 
-    m_dirty = true;
-    m_dirty_x1 = 0;
-    m_dirty_y1 = 0;
-    m_dirty_x2 = width - 1;
-    m_dirty_y2 = height - 1;
-
     bus.map(24, self);
+  }
+
+  void draw(SDL_Texture *texture) {
+    auto pixels = (uint32_t *)m_pixels.data();
+    auto framebuffer = (uint16_t *)m_framebuffer.data();
+
+    for (int y = 0; y < m_height; y++) {
+      for (int x = 0; x < m_width; x++) {
+        pixels[y * m_width + x] = kinnow_palette[framebuffer[y * m_width + x] & 0x7fff];
+      }
+    }
+
+    SDL_UpdateTexture(texture, nullptr, pixels, m_width * 4);
   }
 
   virtual bool mem_read(uint32_t addr, BusSize size, uint32_t &value) {
@@ -103,16 +115,12 @@ public:
       auto line = pixel / m_height;
       auto vram = m_framebuffer.data() + addr;
 
-      if (size == BUS_BYTE && *(uint8_t *)vram != (value & 0xff)) {
-        set_dirty(offset, line, offset, line);
+      if (size == BUS_BYTE)
         *(uint8_t *)vram = value & 0xff;
-      } else if (size == BUS_INT && *(uint16_t *)vram != (value & 0xffff)) {
-        set_dirty(offset, line, offset, line);
+      else if (size == BUS_INT)
         *(uint16_t *)vram = value & 0xffff;
-      } else if (size == BUS_LONG && *(uint32_t *)vram != value) {
-        set_dirty(offset, line, offset + 1, line);
+      else if (size == BUS_LONG)
         *(uint32_t *)vram = value;
-      }
 
       return true;
     }
@@ -121,35 +129,11 @@ public:
   }
 
 private:
-  void set_dirty(int x1, int y1, int x2, int y2) {
-    if (!m_dirty) {
-      m_dirty = true;
-      m_dirty_x1 = x1;
-      m_dirty_y1 = y1;
-      m_dirty_x2 = x2;
-      m_dirty_y2 = y2;
-    } else {
-      if (x1 < m_dirty_x1)
-        m_dirty_x1 = x1;
-      if (y1 < m_dirty_y1)
-        m_dirty_y1 = y1;
-      if (x2 > m_dirty_x2)
-        m_dirty_x2 = x2;
-      if (y2 > m_dirty_y2)
-        m_dirty_y2 = y2;
-    }
-  }
-
   int m_width;
   int m_height;
 
-  bool m_dirty;
-  int m_dirty_x1;
-  int m_dirty_y1;
-  int m_dirty_x2;
-  int m_dirty_y2;
-
   std::vector<uint8_t> m_framebuffer;
+  std::vector<uint8_t> m_pixels;
 
   uint32_t m_slot_info[64];
   uint32_t m_regs[64];

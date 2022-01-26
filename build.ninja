@@ -6,7 +6,7 @@ rule cxx
     depfile = $depfile
 
 rule ld
-    command = clang++ -o $out $in
+    command = clang++ -o $out $in -lSDL2
     description = link $out
 
 rule clean
