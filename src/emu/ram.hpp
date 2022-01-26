@@ -20,9 +20,9 @@ class Ram : public std::enable_shared_from_this<Ram> {
       auto ram = m_ram->m_memory.data() + offset;
       if (size == BUS_BYTE)
         value = *(uint8_t *)ram;
-      else if (size == BUS_BYTE)
+      else if (size == BUS_INT)
         value = *(uint16_t *)ram;
-      else if (size == BUS_BYTE)
+      else if (size == BUS_LONG)
         value = *(uint32_t *)ram;
 
       return true;
@@ -36,9 +36,9 @@ class Ram : public std::enable_shared_from_this<Ram> {
       auto ram = m_ram->m_memory.data() + offset;
       if (size == BUS_BYTE)
         *(uint8_t *)ram = value;
-      else if (size == BUS_BYTE)
+      else if (size == BUS_INT)
         *(uint16_t *)ram = value;
-      else if (size == BUS_BYTE)
+      else if (size == BUS_LONG)
         *(uint32_t *)ram = value;
 
       return true;

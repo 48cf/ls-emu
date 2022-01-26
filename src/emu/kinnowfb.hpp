@@ -40,12 +40,13 @@ public:
 
   virtual bool mem_read(uint32_t addr, BusSize size, uint32_t &value) {
     if (addr < 0x100) {
+      auto slot_info = (uint8_t *)m_slot_info;
       if (size == BUS_BYTE)
-        value = *(uint8_t *)&m_slot_info[addr];
+        value = *(uint8_t *)&slot_info[addr];
       else if (size == BUS_INT)
-        value = *(uint16_t *)&m_slot_info[addr];
+        value = *(uint16_t *)&slot_info[addr];
       else if (size == BUS_LONG)
-        value = *(uint32_t *)&m_slot_info[addr];
+        value = *(uint32_t *)&slot_info[addr];
 
       return true;
     } else if (addr >= 0x3000 && addr < 0x3100) {
@@ -68,9 +69,9 @@ public:
       auto vram = m_framebuffer.data() + addr;
       if (size == BUS_BYTE)
         value = *(uint8_t *)vram;
-      else if (size == BUS_BYTE)
+      else if (size == BUS_INT)
         value = *(uint16_t *)vram;
-      else if (size == BUS_BYTE)
+      else if (size == BUS_LONG)
         value = *(uint32_t *)vram;
 
       return true;
