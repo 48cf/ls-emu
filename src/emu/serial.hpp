@@ -26,7 +26,7 @@ public:
     m_interrupts = false;
   }
 
-  bool read(uint32_t port, BusSize size, uint32_t &value) override {
+  bool read(InterruptController &int_ctl, uint32_t port, BusSize size, uint32_t &value) override {
     if (port == m_base) {
       value = 0;
     } else if (port == m_base + 1) {
@@ -41,7 +41,7 @@ public:
     return true;
   }
 
-  bool write(uint32_t port, BusSize size, uint32_t value) override {
+  bool write(InterruptController &int_ctl, uint32_t port, BusSize size, uint32_t value) override {
     if (port == m_base) {
       switch (value) {
       case SERIAL_CMD_WRITE: putchar(m_data); return true;

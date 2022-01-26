@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <memory>
 
+#include "lsic.hpp"
 #include "platform.hpp"
 
 class AmanatsuDevice : public std::enable_shared_from_this<AmanatsuDevice> {
@@ -63,29 +64,29 @@ public:
     }
   }
 
-  bool read(uint32_t port, BusSize size, uint32_t &value) override {
+  bool read(InterruptController &int_ctl, uint32_t port, BusSize size, uint32_t &value) override {
     if (port == 0x30) { // Get current device
-      value = m_current;
+      value = m_selected;
       return true;
     } else if (port == 0x31) { // Get device magic
-      if (auto device = m_devices[m_current])
+      if (auto device = m_devices[m_selected])
         value = device->magic;
       else
         value = 0;
 
       return true;
     } else if (port == 0x32) { // ???
-      if (m_devices[m_current]) {
+      if (m_devices[m_selected]) {
         value = 0;
         return true;
       }
     } else if (port == 0x33) { // Get port A
-      if (auto device = m_devices[m_current]) {
+      if (auto device = m_devices[m_selected]) {
         value = device->port_a;
         return true;
       }
     } else if (port == 0x34) { // Get port B
-      if (auto device = m_devices[m_current]) {
+      if (auto device = m_devices[m_selected]) {
         value = device->port_b;
         return true;
       }
@@ -94,22 +95,22 @@ public:
     return false;
   }
 
-  bool write(uint32_t port, BusSize size, uint32_t value) override {
+  bool write(InterruptController &int_ctl, uint32_t port, BusSize size, uint32_t value) override {
     if (port == 0x30 && value < 16) { // Set current device
-      m_current = value;
+      m_selected = value;
       return true;
     } else if (port == 0x31) { // Set device magic
       return false;
     } else if (port == 0x32) { // Send command
-      if (auto device = m_devices[m_current])
+      if (auto device = m_devices[m_selected])
         return device->action(value);
     } else if (port == 0x33) { // Set port A
-      if (auto device = m_devices[m_current]) {
+      if (auto device = m_devices[m_selected]) {
         device->port_a = value;
         return true;
       }
     } else if (port == 0x34) { // Set port B
-      if (auto device = m_devices[m_current]) {
+      if (auto device = m_devices[m_selected]) {
         device->port_b = value;
         return true;
       }
@@ -121,7 +122,7 @@ public:
 private:
   std::shared_ptr<AmanatsuDevice> m_devices[16];
 
-  uint32_t m_current = 0;
+  uint32_t m_selected = 0;
 };
 
 // TODO: Rewrite this at some point zzz

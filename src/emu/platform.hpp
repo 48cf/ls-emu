@@ -30,11 +30,11 @@ public:
   virtual void reset() {
   }
 
-  virtual bool read(uint32_t port, BusSize size, uint32_t &value) {
+  virtual bool read(InterruptController &int_ctl, uint32_t port, BusSize size, uint32_t &value) {
     return false;
   }
 
-  virtual bool write(uint32_t port, BusSize size, uint32_t value) {
+  virtual bool write(InterruptController &int_ctl, uint32_t port, BusSize size, uint32_t value) {
     return false;
   }
 };
@@ -56,6 +56,8 @@ public:
 
       stream.seekg(0, std::ios::beg);
       stream.read((char *)m_boot_rom.data(), length);
+    } else {
+      throw std::runtime_error("Failed to open boot ROM image");
     }
 
     bus.map(31, self);
@@ -84,7 +86,7 @@ public:
     case PBOARD_CITRON: {
       auto port_num = address / 4;
       if (auto port = m_ports[port_num])
-        return port->read(port_num, size, value);
+        return port->read(m_int_ctl, port_num, size, value);
 
       value = 0;
       return true;
@@ -137,7 +139,7 @@ public:
     case PBOARD_CITRON: {
       auto port_num = address / 4;
       if (auto port = m_ports[port_num])
-        return port->write(port_num, size, value);
+        return port->write(m_int_ctl, port_num, size, value);
       return true;
     }
     case PBOARD_REGS: {
