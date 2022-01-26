@@ -1,5 +1,6 @@
 #include <SDL2/SDL.h>
 
+#include "emu/amanatsu.hpp"
 #include "emu/bus.hpp"
 #include "emu/cpu.hpp"
 #include "emu/kinnowfb.hpp"
@@ -33,11 +34,12 @@ int main() {
 
   Bus bus;
 
-  Ram ram(bus, 64 * 1024 * 1024);
+  Ram ram(bus, 32 * 1024 * 1024);
   Platform board(bus, "boot.bin");
   KinnowFb kinnow(bus, 1024, 768);
   SerialPort serial1(board, 0);
   SerialPort serial2(board, 1);
+  Amanatsu amanatsu(board);
   Cpu cpu(bus);
 
   SDL_ShowWindow(window);
