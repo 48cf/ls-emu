@@ -1,0 +1,6 @@
+.cache
+.ninja_deps
+.ninja_log
+
+build
+compile_commands.json

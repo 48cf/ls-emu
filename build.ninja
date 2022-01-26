@@ -1,0 +1,23 @@
+cxx_flags = -std=c++2a -ggdb
+
+rule cxx
+    command = clang++ -c $in -o $out -MD -MF $depfile $cxx_flags
+    description = cxx $out
+    depfile = $depfile
+
+rule ld
+    command = clang++ -o $out $in
+    description = link $out
+
+rule clean
+    description = clean
+    command = rm -rf build
+
+build build/src/main.cpp.o: cxx src/main.cpp
+    depfile = build/src/main.cpp.d
+
+build build/ls: ld build/src/main.cpp.o
+build build: phony build/ls
+build clean: clean
+
+default build
