@@ -39,7 +39,15 @@ int main() {
   KinnowFb kinnow(bus, 1024, 768);
 
   InterruptController lsic;
-  Platform board(bus, lsic, "boot.bin");
+  DiskController disk_ctl;
+
+  // ?????
+  auto _ = std::shared_ptr<DiskController>(&disk_ctl, [](auto) {});
+
+  disk_ctl.attach("mintia-dist.img");
+  disk_ctl.attach("aisix-dist.img");
+
+  Platform board(bus, lsic, disk_ctl, "boot.bin");
   SerialPort serial1(board, 0);
   SerialPort serial2(board, 1);
 
