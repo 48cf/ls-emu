@@ -84,6 +84,12 @@ enum ExceptionType : uint32_t {
   EXC_PAGEWRITE = 13,
 };
 
+static const char *exception_names[] = {
+    [EXC_INTERRUPT] = "EXC_INTERRUPT", [EXC_SYSCALL] = "EXC_SYSCALL",     [EXC_FWCALL] = "EXC_FWCALL",   [EXC_BUSERROR] = "EXC_BUSERROR",
+    [EXC_BRKPOINT] = "EXC_BRKPOINT",   [EXC_INVINST] = "EXC_INVINST",     [EXC_INVPRVG] = "EXC_INVPRVG", [EXC_UNALIGNED] = "EXC_UNALIGNED",
+    [EXC_PAGEFAULT] = "EXC_PAGEFAULT", [EXC_PAGEWRITE] = "EXC_PAGEWRITE",
+};
+
 class Cpu {
 public:
   Cpu(Bus &bus, InterruptController &int_ctl) : m_bus(bus), m_int_ctl(int_ctl) {
@@ -167,7 +173,10 @@ private:
 
     m_exc = exception;
 
-    printf("CPU raised exception %d\n", exception);
+    if ((exception == EXC_INTERRUPT || exception == EXC_SYSCALL || exception == EXC_FWCALL || exception == EXC_BRKPOINT) && !nested)
+      return;
+
+    printf("CPU raised exception %d (%s)\n", exception, exception_names[exception]);
     printf("Register dump:\n");
 
     for (auto i = 0; i < 8; i++) {
