@@ -57,8 +57,6 @@ int main() {
     for (auto i = 0; i < 5000; i++)
       cpu.execute();
 
-    kinnow.draw(texture);
-
     SDL_Event event;
 
     while (SDL_PollEvent(&event)) {
@@ -68,6 +66,8 @@ int main() {
       case SDL_KEYUP: keyboard.handle_key_event(event.key); break;
       }
     }
+
+    kinnow.draw(texture);
 
     SDL_RenderCopy(renderer, texture, nullptr, nullptr);
     SDL_RenderPresent(renderer);

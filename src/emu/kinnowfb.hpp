@@ -37,6 +37,7 @@ public:
     bus.map(24, self);
   }
 
+  // TODO: Implement double buffering/dirty regions?
   void draw(SDL_Texture *texture) {
     auto pixels = (uint32_t *)m_pixels.data();
     auto framebuffer = (uint16_t *)m_framebuffer.data();
