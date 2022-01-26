@@ -1,4 +1,4 @@
-cxx_flags = -std=c++2a -ggdb
+cxx_flags = -std=c++2a -ggdb -O3 -Wno-c99-designator
 
 rule cxx
     command = clang++ -c $in -o $out -MD -MF $depfile $cxx_flags
