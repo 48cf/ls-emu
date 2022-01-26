@@ -4,6 +4,7 @@
 #include "emu/bus.hpp"
 #include "emu/cpu.hpp"
 #include "emu/kinnowfb.hpp"
+#include "emu/lsic.hpp"
 #include "emu/platform.hpp"
 #include "emu/ram.hpp"
 #include "emu/serial.hpp"
@@ -37,7 +38,8 @@ int main() {
   Ram ram(bus, 32 * 1024 * 1024);
   KinnowFb kinnow(bus, 1024, 768);
 
-  Platform board(bus, "boot.bin");
+  InterruptController lsic;
+  Platform board(bus, lsic, "boot.bin");
   SerialPort serial1(board, 0);
   SerialPort serial2(board, 1);
 
@@ -45,7 +47,7 @@ int main() {
   AmanatsuKeyboard keyboard(amanatsu);
   AmanatsuMouse mouse(amanatsu);
 
-  Cpu cpu(bus);
+  Cpu cpu(bus, lsic);
 
   SDL_ShowWindow(window);
   SDL_RenderClear(renderer);
@@ -61,9 +63,15 @@ int main() {
 
     while (SDL_PollEvent(&event)) {
       switch (event.type) {
-      case SDL_QUIT: done = true; break;
+      case SDL_QUIT: // Handle native app exit
+        done = true;
+        break;
       case SDL_KEYDOWN:
-      case SDL_KEYUP: keyboard.handle_key_event(event.key); break;
+      case SDL_KEYUP:
+        keyboard.handle_key_event(event.key);
+        if (keyboard.interrupt_line)
+          lsic.raise(keyboard.interrupt_line);
+        break;
       }
     }
 

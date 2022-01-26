@@ -3,6 +3,8 @@
 #include <cstdint>
 
 #include "bus.hpp"
+#include "lsic.hpp"
+#include "platform.hpp"
 
 inline uint32_t sign_ext(uint32_t value, uint32_t bits) {
   return (int32_t)(value << bits) >> bits;
@@ -84,7 +86,7 @@ enum ExceptionType : uint32_t {
 
 class Cpu {
 public:
-  Cpu(Bus &bus) : m_bus(bus) {
+  Cpu(Bus &bus, InterruptController &int_ctl) : m_bus(bus), m_int_ctl(int_ctl) {
     reset();
   }
 
@@ -97,7 +99,7 @@ public:
   }
 
   bool execute() {
-    if (m_exc) {
+    if (m_exc || (m_ctl_regs[CTL_RS] & RS_INT && m_int_ctl.interrupt_pending())) {
       auto exc_vector = 0;
       auto new_state = m_ctl_regs[CTL_RS] & 0xfffffffc;
 
@@ -114,7 +116,7 @@ public:
       if (!exc_vector) {
         reset();
       } else {
-        if (!m_exc) // TODO: Implement interrupts
+        if (!m_exc)
           m_exc = EXC_INTERRUPT;
 
         m_ctl_regs[CTL_EPC] = m_pc;
@@ -460,6 +462,7 @@ private:
 
 private:
   Bus &m_bus;
+  InterruptController &m_int_ctl;
 
   uint32_t m_pc = 0;
   uint32_t m_exc = 0;

@@ -8,11 +8,13 @@
 #include <vector>
 
 #include "bus.hpp"
+#include "lsic.hpp"
 
 enum PlatformMemoryArea : uint8_t {
   PBOARD_CITRON,
   PBOARD_REGS,
   PBOARD_NVRAM,
+  PBOARD_LSIC,
   PBOARD_BOOT_ROM,
   PBOARD_RESET,
   PBOARD_NONE,
@@ -39,7 +41,7 @@ public:
 
 class Platform : public Area {
 public:
-  Platform(Bus &bus, std::filesystem::path boot_rom) {
+  Platform(Bus &bus, InterruptController &int_ctl, std::filesystem::path boot_rom) : m_int_ctl(int_ctl) {
     auto self = std::shared_ptr<Platform>(this, [](auto) {});
 
     m_regs[0] = 0x00030001;       // Board version
@@ -67,6 +69,8 @@ public:
   }
 
   void reset() override {
+    m_int_ctl.reset();
+
     for (auto port : m_ports) {
       if (port)
         port->reset();
@@ -103,6 +107,10 @@ public:
 
       return true;
     }
+    case PBOARD_LSIC:
+      if (size == BUS_LONG)
+        return m_int_ctl.mem_read(address, size, value);
+      return false;
     case PBOARD_BOOT_ROM: {
       if (address > m_boot_rom.size())
         return false;
@@ -150,6 +158,10 @@ public:
 
       return true;
     }
+    case PBOARD_LSIC:
+      if (size == BUS_LONG)
+        return m_int_ctl.mem_write(address, size, value);
+      return false;
     case PBOARD_BOOT_ROM: return false;
     case PBOARD_RESET:
       if (size == BUS_LONG && value == 0xaabbccdd) {
@@ -169,6 +181,8 @@ private:
       return {PBOARD_REGS, addr - 0x800};
     else if (addr >= 0x1000 && addr < 0x11000)
       return {PBOARD_NVRAM, addr - 0x1000};
+    else if (addr >= 0x30000 && addr < 0x30100)
+      return {PBOARD_LSIC, addr - 0x30000};
     else if (addr >= 0x7fe0000)
       return {PBOARD_BOOT_ROM, addr - 0x7fe0000};
     else if (addr == 0x800000)
@@ -176,6 +190,8 @@ private:
     else
       return {PBOARD_NONE, 0};
   }
+
+  InterruptController &m_int_ctl;
 
   std::shared_ptr<CitronPort> m_ports[256] = {nullptr};
   std::vector<uint8_t> m_nvram;
