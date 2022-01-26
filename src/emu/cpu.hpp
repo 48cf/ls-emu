@@ -190,6 +190,7 @@ private:
     }
   }
 
+  // TODO: Implement TLB
   bool translate_va(uint32_t addr, uint32_t &phys, bool is_writing) {
     auto virt_page_num = addr >> 12;
     auto virt_page_off = addr & 0xfff;
@@ -197,17 +198,29 @@ private:
     uint32_t pde;
     uint32_t tlb_high;
 
-    if (!m_bus.mem_read(m_ctl_regs[CTL_PGTB] + ((addr >> 22) << 2), BUS_LONG, pde))
-      return false; // TODO: Raise exception
+    if (!m_bus.mem_read(m_ctl_regs[CTL_PGTB] + ((addr >> 22) << 2), BUS_LONG, pde)) {
+      m_ctl_regs[CTL_EBADADDR] = m_ctl_regs[CTL_PGTB] + ((addr >> 22) << 2);
+      raise_exception(EXC_BUSERROR);
+      return false;
+    }
 
-    if (!(pde & 0x1))
-      return false; // TODO: Raise exception
+    if (!(pde & 0x1)) {
+      m_ctl_regs[CTL_EBADADDR] = addr;
+      raise_exception(is_writing ? EXC_PAGEWRITE : EXC_PAGEFAULT);
+      return false;
+    }
 
-    if (!m_bus.mem_read(((pde >> 5) << 12) + ((virt_page_num & 0x3ff) << 2), BUS_LONG, tlb_high))
-      return false; // TODO: Raise exception
+    if (!m_bus.mem_read(((pde >> 5) << 12) + ((virt_page_num & 0x3ff) << 2), BUS_LONG, tlb_high)) {
+      m_ctl_regs[CTL_EBADADDR] = ((pde >> 5) << 12) + ((virt_page_num & 0x3ff) << 2);
+      raise_exception(EXC_BUSERROR);
+      return false;
+    }
 
-    if (!(tlb_high & 0x1))
-      return false; // TODO: Raise exception
+    if (!(tlb_high & 0x1)) {
+      m_ctl_regs[CTL_EBADADDR] = addr;
+      raise_exception(is_writing ? EXC_PAGEWRITE : EXC_PAGEFAULT);
+      return false;
+    }
 
     auto phys_page_num = ((tlb_high >> 5) & 0xfffff);
 
@@ -225,11 +238,6 @@ private:
 
     if (m_ctl_regs[CTL_RS] & RS_MMU && !translate_va(addr, addr, false))
       return false; // Exception already raised inside `traslate_va`
-
-    static int i = 0;
-
-    if (addr == 0xffff1149)
-      i++;
 
     if (!m_bus.mem_read(addr, size, value)) {
       m_ctl_regs[CTL_EBADADDR] = addr;
@@ -453,10 +461,10 @@ private:
 private:
   Bus &m_bus;
 
-  uint32_t m_pc;
-  uint32_t m_exc;
-  uint32_t m_regs[32];
-  uint32_t m_ctl_regs[32];
+  uint32_t m_pc = 0;
+  uint32_t m_exc = 0;
+  uint32_t m_regs[32] = {0};
+  uint32_t m_ctl_regs[32] = {0};
 
   bool m_halt = false;
   bool m_locked = false;
