@@ -25,9 +25,16 @@ struct PlatformArea {
 
 class CitronPort : public std::enable_shared_from_this<CitronPort> {
 public:
-  virtual void reset() = 0;
-  virtual bool read(uint32_t port, BusSize size, uint32_t &value) = 0;
-  virtual bool write(uint32_t port, BusSize size, uint32_t value) = 0;
+  virtual void reset() {
+  }
+
+  virtual bool read(uint32_t port, BusSize size, uint32_t &value) {
+    return false;
+  }
+
+  virtual bool write(uint32_t port, BusSize size, uint32_t value) {
+    return false;
+  }
 };
 
 class Platform : public Area {
