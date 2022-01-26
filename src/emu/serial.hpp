@@ -18,6 +18,8 @@ public:
 
     platform.set_port(m_base, self);
     platform.set_port(m_base + 1, self);
+
+    setbuf(stdout, nullptr);
   }
 
   void reset() override {
@@ -42,7 +44,7 @@ public:
   bool write(uint32_t port, BusSize size, uint32_t value) override {
     if (port == m_base) {
       switch (value) {
-      case SERIAL_CMD_WRITE: printf("%c", (char)m_data); return true;
+      case SERIAL_CMD_WRITE: putchar(m_data); return true;
       case SERIAL_CMD_READ:
         m_data = m_last_data;
         m_last_data = 0xffff;
