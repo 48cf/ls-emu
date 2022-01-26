@@ -35,11 +35,16 @@ int main() {
   Bus bus;
 
   Ram ram(bus, 32 * 1024 * 1024);
-  Platform board(bus, "boot.bin");
   KinnowFb kinnow(bus, 1024, 768);
+
+  Platform board(bus, "boot.bin");
   SerialPort serial1(board, 0);
   SerialPort serial2(board, 1);
+
   Amanatsu amanatsu(board);
+  AmanatsuKeyboard keyboard(amanatsu);
+  AmanatsuMouse mouse(amanatsu);
+
   Cpu cpu(bus);
 
   SDL_ShowWindow(window);
@@ -60,9 +65,7 @@ int main() {
       switch (event.type) {
       case SDL_QUIT: done = true; break;
       case SDL_KEYDOWN:
-        if (event.key.keysym.scancode == SDL_SCANCODE_ESCAPE)
-          done = true;
-        break;
+      case SDL_KEYUP: keyboard.handle_key_event(event.key); break;
       }
     }
 
