@@ -233,7 +233,7 @@ private:
       return false;
     }
 
-    auto phys_page_num = ((tlb_high >> 5) & 0xfffff);
+    auto phys_page_num = ((tlb_high >> 5) & 0xfffff) << 12;
 
     phys = phys_page_num + virt_page_off;
 
