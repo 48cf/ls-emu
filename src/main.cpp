@@ -64,7 +64,7 @@ int main() {
   auto done = false;
 
   while (!done) {
-    for (auto i = 0; i < 5000; i++)
+    for (auto i = 0; i < 25000; i++)
       cpu.execute();
 
     SDL_Event event;
