@@ -10,11 +10,11 @@
 
 class AmanatsuDevice : public std::enable_shared_from_this<AmanatsuDevice> {
 public:
-  int interrupt_line;
+  int interrupt_line = 0;
 
-  uint32_t magic;
-  uint32_t port_a;
-  uint32_t port_b;
+  uint32_t magic = 0;
+  uint32_t port_a = 0;
+  uint32_t port_b = 0;
 
   virtual void reset() {
   }
