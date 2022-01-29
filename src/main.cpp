@@ -7,7 +7,11 @@
 #include "emu/lsic.hpp"
 #include "emu/platform.hpp"
 #include "emu/ram.hpp"
+#include "emu/rtc.hpp"
 #include "emu/serial.hpp"
+
+constexpr static auto instructions_per_sec = 25'000'000;
+constexpr static auto ticks_per_second = 60;
 
 int main() {
   if (SDL_Init(SDL_INIT_VIDEO) != 0) {
@@ -50,6 +54,7 @@ int main() {
   Platform board(bus, lsic, disk_ctl, "boot.bin");
   SerialPort serial1(board, 0);
   SerialPort serial2(board, 1);
+  Rtc rtc(board);
 
   Amanatsu amanatsu(board);
   AmanatsuKeyboard keyboard(amanatsu);
@@ -62,10 +67,26 @@ int main() {
   SDL_RenderCopy(renderer, texture, nullptr, nullptr);
 
   auto done = false;
+  auto tick_start = SDL_GetTicks();
+  auto tick_end = SDL_GetTicks();
+  auto ticks = 0;
 
   while (!done) {
-    for (auto i = 0; i < 25000; i++)
-      cpu.execute();
+    auto ms = std::max(SDL_GetTicks() - tick_start, 1);
+    auto instr_to_run = instructions_per_sec / ticks_per_second / ms;
+
+    tick_start = SDL_GetTicks();
+
+    for (auto i = 0; i < ms; i++) {
+      for (auto j = 0; j < instr_to_run; j++) {
+        cpu.execute();
+
+        if (cpu.is_halted())
+          break;
+      }
+
+      rtc.tick(lsic, 1);
+    }
 
     SDL_Event event;
 
@@ -83,10 +104,21 @@ int main() {
       }
     }
 
-    kinnow.draw(texture);
+    if (ticks % ticks_per_second == 0) {
+      kinnow.draw(texture);
 
-    SDL_RenderCopy(renderer, texture, nullptr, nullptr);
-    SDL_RenderPresent(renderer);
+      SDL_RenderCopy(renderer, texture, nullptr, nullptr);
+      SDL_RenderPresent(renderer);
+    }
+
+    tick_end = SDL_GetTicks();
+
+    auto time_left = 1000 / ticks_per_second - (int)(tick_end - tick_start);
+
+    if (time_left > 0)
+      SDL_Delay(time_left);
+    else if (time_left < 0)
+      printf("Time overrun: %dms\n", -time_left);
   }
 
   return 0;
