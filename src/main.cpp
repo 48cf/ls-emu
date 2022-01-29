@@ -39,7 +39,7 @@ int main() {
 
   Bus bus;
 
-  Ram ram(bus, 32 * 1024 * 1024);
+  Ram ram(bus, 8 * 1024 * 1024);
   KinnowFb kinnow(bus, 1024, 768);
 
   InterruptController lsic;
