@@ -104,7 +104,19 @@ public:
     m_exc = 0;
   }
 
+  bool is_halted() const {
+    return m_halt;
+  }
+
   bool execute() {
+    if (m_halt) {
+      if (m_exc || (m_ctl_regs[CTL_RS] & RS_INT && m_int_ctl.interrupt_pending())) {
+        m_halt = false;
+      } else {
+        return true;
+      }
+    }
+
     if (m_exc || (m_ctl_regs[CTL_RS] & RS_INT && m_int_ctl.interrupt_pending())) {
       auto exc_vector = 0;
       auto new_state = m_ctl_regs[CTL_RS] & 0xfffffffc;
