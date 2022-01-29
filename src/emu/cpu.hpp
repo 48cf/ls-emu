@@ -233,6 +233,18 @@ private:
       return false;
     }
 
+    if (tlb_high & 0x4 && m_ctl_regs[CTL_RS] & RS_USER) {
+      m_ctl_regs[CTL_EBADADDR] = addr;
+      raise_exception(is_writing ? EXC_PAGEWRITE : EXC_PAGEFAULT);
+      return false;
+    }
+
+    if (is_writing && !(tlb_high & 0x2)) {
+      m_ctl_regs[CTL_EBADADDR] = addr;
+      raise_exception(EXC_PAGEWRITE);
+      return false;
+    }
+
     auto phys_page_num = ((tlb_high >> 5) & 0xfffff) << 12;
 
     phys = phys_page_num + virt_page_off;
